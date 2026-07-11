@@ -21,5 +21,5 @@ export const escapeStorageName = (name: string) => name.replace(/[#/[\]?*]/g, "_
 export const newStringId = () => crypto.randomUUID();
 
 // 숫자 id 스키마(Stock, TradeJournalEntry)를 유지하면서 같은 밀리초·다중 사용자
-// 충돌을 피한다. Date.now()*1000 + 랜덤은 Number.MAX_SAFE_INTEGER 안에 든다.
-export const newNumericId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000);
+// 충돌을 피한다. Date.now()*4000 + 랜덤은 2041년까지 Number.MAX_SAFE_INTEGER 안에 든다.
+export const newNumericId = () => Date.now() * 4000 + Math.floor(Math.random() * 4000);
