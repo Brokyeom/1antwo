@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadFirebaseFile, deleteFirebaseFile } from "@/hooks/use-firebase-upload";
+import { newStringId } from "@/lib/utils";
 import type { DashboardData } from "@/types/dashboard";
 import type { Patch } from "@/features/dashboard/types";
 import { SectionCard } from "@/features/dashboard/components/layout";
@@ -18,7 +19,7 @@ export function PresentationsTab({ data, persist }: { data: DashboardData; persi
     if (file.size > 50 * 1024 * 1024) return window.alert("50MB 이하 파일만 업로드 가능합니다.");
     setUploading(true);
     try {
-      const id = Date.now().toString();
+      const id = newStringId();
       const ext = file.name.split(".").pop()?.toLowerCase() || "file";
       const url = await uploadFirebaseFile(`presentations/${id}`, file);
       await persist((current) => ({

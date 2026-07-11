@@ -5,6 +5,7 @@ import { Paperclip } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { uploadFirebaseFile, deleteFirebaseFile } from "@/hooks/use-firebase-upload";
+import { newStringId } from "@/lib/utils";
 import type { BoardPost, DashboardData, UploadedFile } from "@/types/dashboard";
 import type { Patch } from "@/features/dashboard/types";
 import { PostSection } from "@/features/dashboard/components/post-section";
@@ -22,7 +23,7 @@ export function BoardTab({ data, persist }: { data: DashboardData; persist: (pat
         const postId = post.id;
         const uploaded: UploadedFile[] = [];
         for (const file of files) {
-          const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          const id = newStringId();
           const url = await uploadFirebaseFile(`boardFiles/${postId}/${id}`, file);
           uploaded.push({ id, name: file.name, url, type: file.name.split(".").pop()?.toLowerCase(), uploadedAt: Date.now() });
         }

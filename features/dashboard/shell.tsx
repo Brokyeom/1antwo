@@ -7,7 +7,7 @@ import { Bell, Building2, FolderOpen, MessageSquare, Save, Upload } from "lucide
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { newWithin36Hours } from "@/lib/utils";
-import type { DashboardData } from "@/types/dashboard";
+import { sanitizeBackup } from "@/lib/dashboard/validate";
 import type { TabKey } from "@/features/dashboard/types";
 import { useDashboardData } from "@/features/dashboard/use-dashboard-data";
 import { DashboardContext } from "@/features/dashboard/context";
@@ -67,8 +67,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const importData = async (file?: File) => {
     if (!file) return;
     try {
-      const parsed = JSON.parse(await file.text()) as Partial<DashboardData>;
-      await replaceFromBackup(parsed);
+      const sanitized = sanitizeBackup(JSON.parse(await file.text()));
+      if (!sanitized) {
+        window.alert("백업 파일에서 복원 가능한 데이터를 찾지 못했습니다.");
+        return;
+      }
+      await replaceFromBackup(sanitized);
       window.alert("복원 완료! 모든 사용자에게 동기화됩니다.");
     } catch {
       window.alert("잘못된 파일 형식입니다.");

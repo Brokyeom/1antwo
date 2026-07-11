@@ -29,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fmt, pctCalc } from "@/lib/utils";
+import { fmt, newNumericId, pctCalc } from "@/lib/utils";
 import type { DashboardData, Stock, TradeJournalEntry } from "@/types/dashboard";
 import type { NaverPriceResponse, Patch } from "@/features/dashboard/types";
 import {
@@ -83,7 +83,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
       portfolio: [
         ...current.portfolio,
         {
-          id: Date.now(),
+          id: newNumericId(),
           name,
           code: String(form.get("code") || "").trim(),
           buyPrice,
@@ -202,7 +202,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
         ...current,
         tradeJournal: [
           {
-            id: now,
+            id: newNumericId(),
             tradeDate,
             stockName,
             buyPrice,

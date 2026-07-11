@@ -30,7 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { uploadFirebaseFile, deleteFirebaseFile } from "@/hooks/use-firebase-upload";
-import { fmt, newWithin36Hours } from "@/lib/utils";
+import { fmt, newStringId, newWithin36Hours } from "@/lib/utils";
 import type { DashboardData, PerformanceRecord, TextPost, UploadedFile } from "@/types/dashboard";
 import type { Patch } from "@/features/dashboard/types";
 import {
@@ -168,7 +168,7 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
     if (!file) return;
     if (!file.name.match(/\.(pdf|md|docx|doc)$/i)) return window.alert("PDF, MD, Word 파일만 업로드 가능합니다.");
     if (file.size > 30 * 1024 * 1024) return window.alert("30MB 이하 파일만 업로드 가능합니다.");
-    const id = Date.now().toString();
+    const id = newStringId();
     const url = await uploadFirebaseFile(`companyDocs/${name}/${id}`, file);
     await persist((current) => ({
       ...current,
@@ -185,7 +185,7 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
     if (!author || !title || !content) return window.alert("작성자, 제목, 내용을 모두 입력해주세요.");
     await persist((current) => ({
       ...current,
-      companyNotes: { ...current.companyNotes, [name]: [{ id: Date.now().toString(), author, title, content, createdAt: Date.now() }, ...(current.companyNotes[name] || [])] },
+      companyNotes: { ...current.companyNotes, [name]: [{ id: newStringId(), author, title, content, createdAt: Date.now() }, ...(current.companyNotes[name] || [])] },
     }));
     event.currentTarget.reset();
     setOpen(false);
@@ -257,7 +257,7 @@ function CompanyReports({ name, reports, data, persist }: { name: string; report
     if (!file) return;
     if (!file.name.match(/\.pdf$/i)) return window.alert("PDF 파일만 업로드 가능합니다.");
     if (file.size > 20 * 1024 * 1024) return window.alert("20MB 이하 파일만 업로드 가능합니다.");
-    const id = Date.now().toString();
+    const id = newStringId();
     const url = await uploadFirebaseFile(`reports/${name}/${id}`, file);
     await persist((current) => ({
       ...current,
@@ -299,7 +299,7 @@ function ReportComments({ report, company, comments, persist }: { report: Upload
     const author = String(form.get("author") || "").trim();
     const content = String(form.get("content") || "").trim();
     if (!author || !content) return window.alert("작성자와 코멘트를 입력해주세요.");
-    await persist((current) => ({ ...current, reportComments: { ...current.reportComments, [report.id]: [...(current.reportComments[report.id] || []), { id: Date.now().toString(), author, content, createdAt: Date.now() }] } }));
+    await persist((current) => ({ ...current, reportComments: { ...current.reportComments, [report.id]: [...(current.reportComments[report.id] || []), { id: newStringId(), author, content, createdAt: Date.now() }] } }));
     event.currentTarget.reset();
   };
   return (
@@ -360,7 +360,7 @@ function PerformancePanel({
     const opProfit = Number(form.get("opProfit"));
     const netProfit = Number(form.get("netProfit"));
     if (!label || Number.isNaN(revenue) || Number.isNaN(opProfit) || Number.isNaN(netProfit)) return window.alert("모든 수치를 입력해주세요.");
-    await onAdd({ id: Date.now().toString(), [labelKey]: label, revenue, opProfit, netProfit });
+    await onAdd({ id: newStringId(), [labelKey]: label, revenue, opProfit, netProfit });
     event.currentTarget.reset();
     setOpen(false);
   };

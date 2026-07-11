@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { newWithin36Hours } from "@/lib/utils";
+import { newStringId, newWithin36Hours } from "@/lib/utils";
 import type { TextPost } from "@/types/dashboard";
 import { EmptyState, FormGrid, SectionCard } from "@/features/dashboard/components/layout";
 import { DeleteConfirm } from "@/features/dashboard/components/delete-confirm";
@@ -51,7 +51,7 @@ export function PostSection({
     if (!author) return window.alert("작성자를 입력해주세요.");
     if (!titleValue) return window.alert("제목을 입력해주세요.");
     if (requireContent && !content) return window.alert("내용을 입력해주세요.");
-    await onCreate({ id: Date.now().toString(), author, title: titleValue, content, createdAt: Date.now() });
+    await onCreate({ id: newStringId(), author, title: titleValue, content, createdAt: Date.now() });
     event.currentTarget.reset();
     setOpen(false);
   };
