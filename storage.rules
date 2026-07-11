@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 스터디 멤버 이메일 허용목록 — database.rules.json의 목록과 반드시 함께 갱신할 것.
+    function isMember() {
+      return request.auth != null
+        && request.auth.token.email_verified
+        && request.auth.token.email.lower() in [
+             'member1@example.com',
+             'member2@example.com'
+           ];
+    }
+    match /{allPaths=**} {
+      allow read, write: if isMember();
+    }
+  }
+}

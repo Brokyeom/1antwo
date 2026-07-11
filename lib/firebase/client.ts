@@ -1,6 +1,7 @@
 "use client";
 
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
+import { getAuth, type Auth } from "firebase/auth";
 import { getDatabase, ref, type Database, type DatabaseReference } from "firebase/database";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
@@ -29,6 +30,7 @@ export const app: FirebaseApp | null = isFirebaseDatabaseConfigured
     : initializeApp(firebaseConfig)
   : null;
 
+export const auth: Auth | null = app ? getAuth(app) : null;
 export const db: Database | null = app ? getDatabase(app) : null;
 export const dashboardRef: DatabaseReference | null = db ? ref(db, "dashboard") : null;
 export const storage: FirebaseStorage | null = app && isFirebaseStorageConfigured ? getStorage(app) : null;

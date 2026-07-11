@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Building2, FolderOpen, MessageSquare, Save, Upload } from "lucide-react";
+import { Bell, Building2, FolderOpen, LogOut, MessageSquare, Save, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToastProvider, useToast } from "@/components/ui/toast";
 import { newWithin36Hours } from "@/lib/utils";
 import { sanitizeBackup } from "@/lib/dashboard/validate";
+import { isFirebaseDatabaseConfigured } from "@/lib/firebase/client";
+import { useAuth } from "@/features/auth/use-auth";
+import { AuthContext, useAuthContext } from "@/features/auth/context";
+import { LoginScreen } from "@/features/auth/login-screen";
 import type { TabKey } from "@/features/dashboard/types";
 import { useDashboardData } from "@/features/dashboard/use-dashboard-data";
 import { DashboardContext } from "@/features/dashboard/context";
@@ -29,14 +33,40 @@ const tabItems: Array<{ key: TabKey; href: string; label: string; icon: React.Re
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
-      <ShellInner>{children}</ShellInner>
+      <AuthGate>{children}</AuthGate>
     </ToastProvider>
+  );
+}
+
+// 잠긴 DB 규칙에서 인증 전 onValue 구독은 permission_denied로 리스너가 영구
+// 취소되므로, 데이터 구독(ShellInner)은 반드시 로그인 이후에만 마운트한다.
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const authState = useAuth();
+
+  if (isFirebaseDatabaseConfigured) {
+    if (authState.loading) {
+      return (
+        <main className="min-h-screen bg-background px-4 py-10 text-foreground md:px-8">
+          <DashboardSkeleton />
+        </main>
+      );
+    }
+    if (!authState.user) {
+      return <LoginScreen signIn={authState.signIn} signInError={authState.signInError} />;
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={authState}>
+      <ShellInner>{children}</ShellInner>
+    </AuthContext.Provider>
   );
 }
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const dashboard = useDashboardData();
   const { data, loading, connected, loadError, saveError, saveStatus, replaceFromBackup } = dashboard;
+  const { user, signOut } = useAuthContext();
   const pathname = usePathname();
   const toast = useToast();
   const [clock, setClock] = useState<Date | null>(null);
@@ -121,6 +151,17 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </Button>
             <input ref={importRef} className="hidden" type="file" accept=".json" onChange={(event) => importData(event.target.files?.[0])} />
             <span className="min-w-16 text-xs text-primary">{saveStatus}</span>
+            {user && (
+              <>
+                <span className="max-w-40 truncate text-xs text-muted-foreground" title={user.email || undefined}>
+                  {user.email}
+                </span>
+                <Button variant="outline" size="sm" onClick={signOut}>
+                  <LogOut className="h-3.5 w-3.5" />
+                  로그아웃
+                </Button>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-3 text-xs">
             <span className="hidden text-muted-foreground sm:inline">
