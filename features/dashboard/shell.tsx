@@ -27,7 +27,7 @@ const tabItems: Array<{ key: TabKey; href: string; label: string; icon: React.Re
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const dashboard = useDashboardData();
-  const { data, loading, connected, error, saveStatus, replaceFromBackup } = dashboard;
+  const { data, loading, connected, loadError, saveStatus, replaceFromBackup } = dashboard;
   const pathname = usePathname();
   const [clock, setClock] = useState<Date | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
@@ -77,7 +77,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const content = loading ? <DashboardSkeleton /> : error ? <DataErrorPanel error={error} /> : children;
+  const content = loading ? <DashboardSkeleton /> : loadError ? <DataErrorPanel error={loadError} /> : children;
 
   return (
     <DashboardContext.Provider value={dashboard}>
@@ -93,11 +93,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </Badge>
           </div>
           <div className="hidden items-center gap-2 md:flex">
-            <Button variant="outline" size="sm" onClick={exportData} disabled={loading || Boolean(error)}>
+            <Button variant="outline" size="sm" onClick={exportData} disabled={loading || Boolean(loadError)}>
               <Save className="h-3.5 w-3.5" />
               백업
             </Button>
-            <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} disabled={loading || Boolean(error)}>
+            <Button variant="outline" size="sm" onClick={() => importRef.current?.click()} disabled={loading || Boolean(loadError)}>
               <Upload className="h-3.5 w-3.5" />
               복원
             </Button>
