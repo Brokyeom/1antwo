@@ -17,6 +17,7 @@ import { Plus, Search, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,6 +52,7 @@ import { FileList } from "@/features/dashboard/components/file-list";
 
 export function AnalysisTab({ data, persist }: { data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
   const names = Object.keys(data.financials);
+  const toast = useToast();
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
 
@@ -59,8 +61,8 @@ export function AnalysisTab({ data, persist }: { data: DashboardData; persist: (
   const addCompany = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = String(new FormData(event.currentTarget).get("name") || "").trim();
-    if (!name) return window.alert("기업명을 입력해주세요.");
-    if (data.financials[name]) return window.alert("이미 존재하는 기업입니다.");
+    if (!name) return toast("기업명을 입력해주세요.", { variant: "destructive" });
+    if (data.financials[name]) return toast("이미 존재하는 기업입니다.", { variant: "destructive" });
     await persist((current) => ({
       ...current,
       financials: { ...current.financials, [name]: { per: 0, pbr: 0, roe: 0, debt: 0, rev: [], op: [], years: [], desc: "" } },
@@ -163,11 +165,12 @@ export function CompanyPanel({ name, data, persist }: { name: string; data: Dash
 }
 
 function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: UploadedFile[]; notes: TextPost[]; persist: (patch: Patch) => Promise<void> }) {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const upload = async (file?: File) => {
     if (!file) return;
-    if (!file.name.match(/\.(pdf|md|docx|doc)$/i)) return window.alert("PDF, MD, Word 파일만 업로드 가능합니다.");
-    if (file.size > 30 * 1024 * 1024) return window.alert("30MB 이하 파일만 업로드 가능합니다.");
+    if (!file.name.match(/\.(pdf|md|docx|doc)$/i)) return toast("PDF, MD, Word 파일만 업로드 가능합니다.", { variant: "destructive" });
+    if (file.size > 30 * 1024 * 1024) return toast("30MB 이하 파일만 업로드 가능합니다.", { variant: "destructive" });
     const id = newStringId();
     const url = await uploadFirebaseFile(`companyDocs/${name}/${id}`, file);
     await persist((current) => ({
@@ -182,7 +185,7 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
     const author = String(form.get("author") || "").trim();
     const title = String(form.get("title") || "").trim();
     const content = String(form.get("content") || "").trim();
-    if (!author || !title || !content) return window.alert("작성자, 제목, 내용을 모두 입력해주세요.");
+    if (!author || !title || !content) return toast("작성자, 제목, 내용을 모두 입력해주세요.", { variant: "destructive" });
     await persist((current) => ({
       ...current,
       companyNotes: { ...current.companyNotes, [name]: [{ id: newStringId(), author, title, content, createdAt: Date.now() }, ...(current.companyNotes[name] || [])] },
@@ -253,10 +256,11 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
 }
 
 function CompanyReports({ name, reports, data, persist }: { name: string; reports: UploadedFile[]; data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+  const toast = useToast();
   const upload = async (file?: File) => {
     if (!file) return;
-    if (!file.name.match(/\.pdf$/i)) return window.alert("PDF 파일만 업로드 가능합니다.");
-    if (file.size > 20 * 1024 * 1024) return window.alert("20MB 이하 파일만 업로드 가능합니다.");
+    if (!file.name.match(/\.pdf$/i)) return toast("PDF 파일만 업로드 가능합니다.", { variant: "destructive" });
+    if (file.size > 20 * 1024 * 1024) return toast("20MB 이하 파일만 업로드 가능합니다.", { variant: "destructive" });
     const id = newStringId();
     const url = await uploadFirebaseFile(`reports/${name}/${id}`, file);
     await persist((current) => ({
@@ -292,13 +296,14 @@ function CompanyReports({ name, reports, data, persist }: { name: string; report
 }
 
 function ReportComments({ report, company, comments, persist }: { report: UploadedFile; company: string; comments: DashboardData["reportComments"][string]; persist: (patch: Patch) => Promise<void> }) {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const author = String(form.get("author") || "").trim();
     const content = String(form.get("content") || "").trim();
-    if (!author || !content) return window.alert("작성자와 코멘트를 입력해주세요.");
+    if (!author || !content) return toast("작성자와 코멘트를 입력해주세요.", { variant: "destructive" });
     await persist((current) => ({ ...current, reportComments: { ...current.reportComments, [report.id]: [...(current.reportComments[report.id] || []), { id: newStringId(), author, content, createdAt: Date.now() }] } }));
     event.currentTarget.reset();
   };
@@ -342,6 +347,7 @@ function PerformancePanel({
   onAdd: (record: PerformanceRecord) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
+  const toast = useToast();
   const mounted = useMounted();
   const [open, setOpen] = useState(false);
   const chartData = records.map((record) => ({
@@ -359,7 +365,7 @@ function PerformancePanel({
     const revenue = Number(form.get("revenue"));
     const opProfit = Number(form.get("opProfit"));
     const netProfit = Number(form.get("netProfit"));
-    if (!label || Number.isNaN(revenue) || Number.isNaN(opProfit) || Number.isNaN(netProfit)) return window.alert("모든 수치를 입력해주세요.");
+    if (!label || Number.isNaN(revenue) || Number.isNaN(opProfit) || Number.isNaN(netProfit)) return toast("모든 수치를 입력해주세요.", { variant: "destructive" });
     await onAdd({ id: newStringId(), [labelKey]: label, revenue, opProfit, netProfit });
     event.currentTarget.reset();
     setOpen(false);

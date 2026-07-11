@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Building2, FolderOpen, MessageSquare, Save, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ToastProvider, useToast } from "@/components/ui/toast";
 import { newWithin36Hours } from "@/lib/utils";
 import { sanitizeBackup } from "@/lib/dashboard/validate";
 import type { TabKey } from "@/features/dashboard/types";
@@ -26,11 +27,24 @@ const tabItems: Array<{ key: TabKey; href: string; label: string; icon: React.Re
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <ToastProvider>
+      <ShellInner>{children}</ShellInner>
+    </ToastProvider>
+  );
+}
+
+function ShellInner({ children }: { children: React.ReactNode }) {
   const dashboard = useDashboardData();
-  const { data, loading, connected, loadError, saveStatus, replaceFromBackup } = dashboard;
+  const { data, loading, connected, loadError, saveError, saveStatus, replaceFromBackup } = dashboard;
   const pathname = usePathname();
+  const toast = useToast();
   const [clock, setClock] = useState<Date | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (saveError) toast(saveError, { variant: "destructive" });
+  }, [saveError, toast]);
 
   useEffect(() => {
     const initial = window.setTimeout(() => setClock(new Date()), 0);
@@ -69,13 +83,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     try {
       const sanitized = sanitizeBackup(JSON.parse(await file.text()));
       if (!sanitized) {
-        window.alert("백업 파일에서 복원 가능한 데이터를 찾지 못했습니다.");
+        toast("백업 파일에서 복원 가능한 데이터를 찾지 못했습니다.", { variant: "destructive" });
         return;
       }
       await replaceFromBackup(sanitized);
-      window.alert("복원 완료! 모든 사용자에게 동기화됩니다.");
+      toast("복원 완료! 모든 사용자에게 동기화됩니다.");
     } catch {
-      window.alert("잘못된 파일 형식입니다.");
+      toast("잘못된 파일 형식입니다.", { variant: "destructive" });
     } finally {
       if (importRef.current) importRef.current.value = "";
     }

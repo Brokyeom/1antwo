@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -39,6 +40,7 @@ export function PostSection({
   renderPostExtra?: (post: TextPost) => React.ReactNode;
   requireContent?: boolean;
 }) {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -48,9 +50,9 @@ export function PostSection({
     const author = String(form.get("author") || "").trim();
     const titleValue = String(form.get("title") || "").trim();
     const content = String(form.get("content") || "").trim();
-    if (!author) return window.alert("작성자를 입력해주세요.");
-    if (!titleValue) return window.alert("제목을 입력해주세요.");
-    if (requireContent && !content) return window.alert("내용을 입력해주세요.");
+    if (!author) return toast("작성자를 입력해주세요.", { variant: "destructive" });
+    if (!titleValue) return toast("제목을 입력해주세요.", { variant: "destructive" });
+    if (requireContent && !content) return toast("내용을 입력해주세요.", { variant: "destructive" });
     await onCreate({ id: newStringId(), author, title: titleValue, content, createdAt: Date.now() });
     event.currentTarget.reset();
     setOpen(false);

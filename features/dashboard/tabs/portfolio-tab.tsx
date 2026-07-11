@@ -17,6 +17,7 @@ import {
 import { Edit3, Plus, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +54,7 @@ import { DeleteConfirm } from "@/features/dashboard/components/delete-confirm";
 import { StatCard } from "@/features/dashboard/components/stat-card";
 
 export function PortfolioTab({ data, persist }: { data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+  const toast = useToast();
   const mounted = useMounted();
   const [activePortfolioSection, setActivePortfolioSection] = useState<"charts" | "journal">("charts");
   const [showAdd, setShowAdd] = useState(false);
@@ -77,7 +79,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
     const buyPrice = Number(form.get("buyPrice"));
     const currentPrice = Number(form.get("currentPrice"));
     const qty = Number(form.get("qty"));
-    if (!name || !buyPrice || !currentPrice || !qty) return window.alert("필수 항목(*)을 입력해주세요.");
+    if (!name || !buyPrice || !currentPrice || !qty) return toast("필수 항목(*)을 입력해주세요.", { variant: "destructive" });
     await persist((current) => ({
       ...current,
       portfolio: [
@@ -102,7 +104,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
     const buyPrice = Number(values.get("buyPrice"));
     const currentPrice = Number(values.get("currentPrice"));
     const qty = Number(values.get("qty"));
-    if (!buyPrice || !currentPrice || !qty) return window.alert("값을 모두 입력해주세요.");
+    if (!buyPrice || !currentPrice || !qty) return toast("값을 모두 입력해주세요.", { variant: "destructive" });
     await persist((current) => ({
       ...current,
       portfolio: current.portfolio.map((item) =>
@@ -116,7 +118,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
 
   const refreshNaverPrices = async () => {
     const targets = data.portfolio.filter((stock) => stock.code?.trim());
-    if (!targets.length) return window.alert("종목코드(6자리)가 입력된 종목이 없습니다.");
+    if (!targets.length) return toast("종목코드(6자리)가 입력된 종목이 없습니다.", { variant: "destructive" });
     setRefreshing(true);
     try {
       const response = await fetch(`/api/naver-price?codes=${targets.map((stock) => stock.code?.trim()).join(",")}`);
@@ -131,7 +133,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
       if (updated === 0) throw new Error("갱신된 종목 없음");
     } catch (error) {
       console.error(error);
-      window.alert("현재가 갱신에 실패했습니다. 종목코드를 확인해주세요.");
+      toast("현재가 갱신에 실패했습니다. 종목코드를 확인해주세요.", { variant: "destructive" });
     } finally {
       setRefreshing(false);
     }
@@ -142,8 +144,8 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
     const form = new FormData(event.currentTarget);
     const label = `${form.get("year")}.${form.get("month")}`;
     const value = Number(form.get("value"));
-    if (Number.isNaN(value)) return window.alert("수익률을 입력해주세요.");
-    if (data.returnsData.labels.includes(label)) return window.alert("이미 해당 월 데이터가 있습니다.");
+    if (Number.isNaN(value)) return toast("수익률을 입력해주세요.", { variant: "destructive" });
+    if (data.returnsData.labels.includes(label)) return toast("이미 해당 월 데이터가 있습니다.", { variant: "destructive" });
     await persist((current) => ({
       ...current,
       returnsData: {
@@ -172,7 +174,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
     const sellReason = String(form.get("sellReason") || "").trim();
 
     if (!tradeDate || !stockName || !buyPrice || !quantity || !finalSellPrice || !buyReason || !sellReason) {
-      return window.alert("필수 항목을 모두 입력해주세요.");
+      return toast("필수 항목을 모두 입력해주세요.", { variant: "destructive" });
     }
 
     const now = Date.now();

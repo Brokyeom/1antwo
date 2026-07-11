@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast";
 import { uploadFirebaseFile, deleteFirebaseFile } from "@/hooks/use-firebase-upload";
 import { newStringId } from "@/lib/utils";
 import type { DashboardData } from "@/types/dashboard";
@@ -11,12 +12,13 @@ import { SectionCard } from "@/features/dashboard/components/layout";
 import { FileList } from "@/features/dashboard/components/file-list";
 
 export function PresentationsTab({ data, persist }: { data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+  const toast = useToast();
   const [uploading, setUploading] = useState(false);
 
   const upload = async (file?: File) => {
     if (!file) return;
-    if (!file.name.match(/\.(pdf|pptx|ppt)$/i)) return window.alert("PDF 또는 PPTX 파일만 업로드 가능합니다.");
-    if (file.size > 50 * 1024 * 1024) return window.alert("50MB 이하 파일만 업로드 가능합니다.");
+    if (!file.name.match(/\.(pdf|pptx|ppt)$/i)) return toast("PDF 또는 PPTX 파일만 업로드 가능합니다.", { variant: "destructive" });
+    if (file.size > 50 * 1024 * 1024) return toast("50MB 이하 파일만 업로드 가능합니다.", { variant: "destructive" });
     setUploading(true);
     try {
       const id = newStringId();
@@ -27,7 +29,7 @@ export function PresentationsTab({ data, persist }: { data: DashboardData; persi
         presentations: [...current.presentations, { id, name: file.name, url, uploadedAt: Date.now(), type: ext === "pdf" ? "pdf" : "pptx" }],
       }));
     } catch (error) {
-      window.alert(`업로드 실패: ${(error as Error).message}`);
+      toast(`업로드 실패: ${(error as Error).message}`, { variant: "destructive" });
     } finally {
       setUploading(false);
     }
