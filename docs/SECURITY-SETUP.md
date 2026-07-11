@@ -13,7 +13,7 @@
 Authentication → **Settings** → **Authorized domains**에 다음을 추가:
 
 - `localhost` (개발용, 기본 포함)
-- Netlify 배포 도메인 (예: `your-site.netlify.app`)
+- Vercel 배포 도메인 (예: `your-site.vercel.app`, 프리뷰 배포용 `*.vercel.app` 포함)
 - 커스텀 도메인이 있다면 함께 추가
 
 미등록 도메인에서는 로그인 팝업이 `auth/unauthorized-domain` 오류로 실패합니다.

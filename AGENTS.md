@@ -10,7 +10,6 @@ This repository is a Next.js App Router dashboard migrated from the legacy stati
 - `hooks/`: reusable client hooks and helpers, including Firebase Storage upload/delete helpers.
 - `lib/`: shared utilities, Firebase client setup, and default dashboard data.
 - `types/`: shared TypeScript domain types.
-- `netlify/functions/naver-price.js`: legacy Netlify function retained only as migration reference.
 
 No dedicated test directory exists yet. Add tests near the relevant feature or under `__tests__/` when a test framework is introduced.
 
