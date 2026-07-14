@@ -3,8 +3,21 @@
     ".read": false,
     ".write": false,
     "dashboard": {
-      ".read": "auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'member1@example.com' || auth.token.email.toLowerCase() == 'member2@example.com')",
-      ".write": "auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'member1@example.com' || auth.token.email.toLowerCase() == 'member2@example.com')"
+      ".read": "auth != null && auth.token.email_verified == true && (root.child('admins').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true || root.child('members').child(auth.token.email.toLowerCase().replace('.', ',')).exists())",
+      ".write": "auth != null && auth.token.email_verified == true && (root.child('admins').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true || root.child('members').child(auth.token.email.toLowerCase().replace('.', ',')).exists())"
+    },
+    "admins": {
+      "$emailKey": {
+        ".read": "auth != null && auth.token.email.toLowerCase().replace('.', ',') == $emailKey",
+        ".write": false
+      }
+    },
+    "members": {
+      ".read": "auth != null && root.child('admins').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+      ".write": "auth != null && root.child('admins').child(auth.token.email.toLowerCase().replace('.', ',')).val() == true",
+      "$emailKey": {
+        ".read": "auth != null && auth.token.email.toLowerCase().replace('.', ',') == $emailKey"
+      }
     }
   }
 }

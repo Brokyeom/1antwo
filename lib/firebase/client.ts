@@ -33,4 +33,5 @@ export const app: FirebaseApp | null = isFirebaseDatabaseConfigured
 export const auth: Auth | null = app ? getAuth(app) : null;
 export const db: Database | null = app ? getDatabase(app) : null;
 export const dashboardRef: DatabaseReference | null = db ? ref(db, "dashboard") : null;
+export const membersRef: DatabaseReference | null = db ? ref(db, "members") : null;
 export const storage: FirebaseStorage | null = app && isFirebaseStorageConfigured ? getStorage(app) : null;

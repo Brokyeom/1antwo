@@ -13,6 +13,9 @@ import { isFirebaseDatabaseConfigured } from "@/lib/firebase/client";
 import { useAuth } from "@/features/auth/use-auth";
 import { AuthContext, useAuthContext } from "@/features/auth/context";
 import { LoginScreen } from "@/features/auth/login-screen";
+import { AccessDeniedScreen } from "@/features/auth/access-denied-screen";
+import { MemberManagementDialog } from "@/features/auth/member-management-dialog";
+import { useMembership } from "@/features/auth/use-membership";
 import type { TabKey } from "@/features/dashboard/types";
 import { useDashboardData } from "@/features/dashboard/use-dashboard-data";
 import { DashboardContext } from "@/features/dashboard/context";
@@ -65,8 +68,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const dashboard = useDashboardData();
-  const { data, loading, connected, loadError, saveError, saveStatus, replaceFromBackup } = dashboard;
+  const { data, loading, connected, loadError, accessDenied, saveError, saveStatus, replaceFromBackup } = dashboard;
   const { user, signOut } = useAuthContext();
+  const { isAdmin } = useMembership(user?.email ?? null);
   const pathname = usePathname();
   const toast = useToast();
   const [clock, setClock] = useState<Date | null>(null);
@@ -125,6 +129,10 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     }
   };
 
+  if (accessDenied) {
+    return <AccessDeniedScreen email={user?.email ?? null} onSignOut={signOut} />;
+  }
+
   const content = loading ? <DashboardSkeleton /> : loadError ? <DataErrorPanel error={loadError} /> : children;
 
   return (
@@ -151,6 +159,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             </Button>
             <input ref={importRef} className="hidden" type="file" accept=".json" onChange={(event) => importData(event.target.files?.[0])} />
             <span className="min-w-16 text-xs text-primary">{saveStatus}</span>
+            {isAdmin && <MemberManagementDialog inviterEmail={user?.email ?? null} />}
             {user && (
               <>
                 <span className="max-w-40 truncate text-xs text-muted-foreground" title={user.email || undefined}>

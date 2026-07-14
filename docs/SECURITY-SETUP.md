@@ -1,11 +1,23 @@
 # 보안 설정 가이드
 
-이 앱은 **Google 로그인 + 이메일 허용목록**으로 보호됩니다. 코드 배포만으로는 잠기지 않으며,
-아래 Firebase 콘솔 설정과 규칙 배포를 완료해야 실제로 보호가 적용됩니다.
+이 앱은 **Google 로그인 + 초대 기반 접근 제어**로 보호됩니다. 회원가입 폼은 없고,
+관리자(admin)가 초대한 이메일로 로그인한 사용자만 대시보드에 접근할 수 있습니다.
+코드 배포만으로는 잠기지 않으며, 아래 콘솔 설정·규칙 배포·admin 부트스트랩을 완료해야
+실제 보호가 적용됩니다.
+
+## 접근 제어 모델
+
+- `/admins/{이메일키}: true` — **관리자**. Firebase 콘솔에서 수동 등록(부트스트랩). 대시보드 접근 + 멤버 관리.
+- `/members/{이메일키}: { email, invitedBy, invitedAt }` — **초대된 멤버**. admin이 대시보드 내 "멤버 관리"에서 추가/삭제(규칙 재배포 불필요).
+- **이메일키** = 이메일을 소문자로 바꾼 뒤 `.`을 전부 `,`로 치환. 예: `hg.kim@flarelane.com` → `hg,kim@flarelane,com`.
+- 대시보드 접근 자격 = `admin이거나 member`. 둘 다 아니면 로그인은 되지만 "초대되지 않은 계정" 화면이 표시됩니다.
+
+> ⚠️ **부트스트랩 순서 주의**: `/admins`가 비어 있으면 아무도(관리자조차) 접근할 수 없습니다.
+> 규칙 배포 후 **가장 먼저** 콘솔에서 최초 admin을 등록하세요(아래 3번).
 
 ## 1. Google 로그인 제공자 활성화
 
-1. [Firebase 콘솔](https://console.firebase.google.com) → 프로젝트 선택 → **Authentication** → **Sign-in method**
+1. [Firebase 콘솔](https://console.firebase.google.com) → 프로젝트(`beensight`) → **Authentication** → **Sign-in method**
 2. **Google** 제공자를 활성화하고 지원 이메일을 선택 후 저장
 
 ## 2. 승인된 도메인 등록
@@ -18,50 +30,65 @@ Authentication → **Settings** → **Authorized domains**에 다음을 추가:
 
 미등록 도메인에서는 로그인 팝업이 `auth/unauthorized-domain` 오류로 실패합니다.
 
-## 3. 멤버 이메일 허용목록 편집
+## 3. 규칙 배포
 
-두 파일의 플레이스홀더(`member1@example.com` 등)를 실제 스터디 멤버의 Google 계정
-이메일(**소문자**)로 바꿉니다. **두 파일을 항상 함께 갱신하세요.**
-
-- [database.rules.json](../database.rules.json) — `.read`와 `.write` 양쪽의 `||` 체인
-  (RTDB 규칙 언어에는 배열/`in` 연산자가 없어 `||`로 나열하며, read/write에 동일 조건을 중복 기재해야 합니다)
-- [storage.rules](../storage.rules) — `isMember()` 함수의 이메일 리스트
-
-멤버 추가/제거 시마다 규칙을 다시 배포해야 합니다(아래 4번).
-
-> **대안**: 멤버를 자주 바꾼다면 DB에 `/allowlist/{이메일의 .을 ,로 치환}: true` 노드를 두고
-> 규칙을 `root.child('allowlist').child(auth.token.email.toLowerCase().replace('.', ',')).exists()`로
-> 바꾸는 방법도 있습니다(RTDB 규칙의 `replace()`는 모든 `.`을 치환하므로 안전).
-> 이 방식은 콘솔 데이터 편집만으로 멤버를 관리할 수 있어 규칙 재배포가 필요 없습니다.
-
-## 4. 규칙 배포
+멤버 이메일을 규칙 파일에 넣을 필요가 없습니다(동적 허용목록). 파일을 그대로 배포하세요.
 
 **방법 A — 콘솔에서 붙여넣기 (간단):**
 
-1. Realtime Database → **규칙** 탭 → `database.rules.json` 내용 붙여넣기 → 게시
-2. Storage → **규칙** 탭 → `storage.rules` 내용 붙여넣기 → 게시
+1. Realtime Database → **규칙** 탭 → [database.rules.json](../database.rules.json) 내용 붙여넣기 → 게시
+2. Storage → **규칙** 탭 → [storage.rules](../storage.rules) 내용 붙여넣기 → 게시
 
 **방법 B — Firebase CLI (레포의 firebase.json 사용):**
 
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase use <프로젝트-ID>
+firebase use beensight
 firebase deploy --only database,storage
 ```
 
-## 5. 동작 확인
+## 4. 최초 admin 부트스트랩 (필수)
 
-1. 허용목록에 **없는** Google 계정으로 로그인 → "로그인 계정이 멤버 목록에 없습니다" 오류 화면이 떠야 정상
-2. 허용목록에 **있는** 계정으로 로그인 → 대시보드 데이터가 로드되어야 정상
-3. 시크릿 창에서 로그인 없이 접속 → 로그인 화면만 보이고 데이터 접근 불가
+Realtime Database → **데이터** 탭에서 수동으로 추가:
+
+```
+admins
+  └─ <이메일의 .을 ,로 치환>: true
+```
+
+예를 들어 관리자 이메일이 `hg.kim@flarelane.com`이면 키는 `hg,kim@flarelane,com`,
+값은 boolean `true`. admin을 여러 명 두려면 같은 방식으로 여러 항목을 추가합니다.
+
+> admin은 콘솔에서만 관리합니다(규칙상 앱에서 `/admins` 쓰기 불가). 멤버는 4번 이후
+> 대시보드 안에서 관리합니다.
+
+## 5. 멤버 초대 (일상 운영)
+
+1. admin 계정으로 로그인 → 헤더의 **"멤버 관리"** 버튼 클릭
+2. 초대할 이메일 입력 → **초대**. 그 이메일로 Google 로그인하면 즉시 접근 가능.
+3. 목록에서 **제외**로 접근 권한 회수.
+
+이메일 발송 기능은 없으므로, 초대 대상에게 대시보드 URL은 외부(카카오톡 등)로 전달하세요.
+
+## 6. 동작 확인
+
+1. `/admins`·`/members` 어디에도 없는 계정으로 로그인 → "초대되지 않은 계정입니다" 화면이 떠야 정상
+2. admin으로 로그인 → 대시보드 로드 + 헤더에 "멤버 관리" 노출
+3. admin이 초대한 계정으로 로그인 → 대시보드 접근 가능("멤버 관리"는 안 보임)
+4. 시크릿 창에서 로그인 없이 접속 → 로그인 화면만 보이고 데이터 접근 불가
 
 ## 알아둘 점
 
-- **Storage 다운로드 URL**: 앱은 `getDownloadURL()`이 만든 토큰 URL로 파일을 보여줍니다.
-  이 URL은 Storage 규칙을 우회하므로, URL을 아는 사람은 해당 파일에 접근할 수 있습니다.
-  민감한 파일 공유 시 유의하세요 (URL 유출 시 콘솔에서 해당 파일의 토큰을 재발급하면 기존 URL이 무효화됩니다).
+- **Storage 규칙의 한계**: Storage 규칙은 Realtime Database(`/members`, `/admins`)를 참조할 수
+  없어(Firestore·custom claims만 가능), 파일 접근은 "검증된 로그인 사용자"까지만 잠급니다.
+  실질적인 접근 통제는 RTDB에 있습니다 — 초대되지 않은 사용자는 대시보드를 열 수 없어
+  파일 경로/URL을 얻는 진입점이 없습니다. **완전한 Storage 잠금**이 필요하면 Cloud Functions로
+  member/admin custom claim을 부여하고 `storage.rules`에 `request.auth.token.member == true`
+  조건을 추가하세요.
+- **Storage 다운로드 URL**: 앱은 `getDownloadURL()` 토큰 URL로 파일을 보여줍니다. 이 URL은
+  Storage 규칙을 우회하므로 URL을 아는 사람은 접근 가능합니다(콘솔에서 토큰 재발급 시 무효화).
 - **클라이언트 Firebase 설정값**(`NEXT_PUBLIC_FIREBASE_*`)은 번들에 노출되는 것이 정상입니다.
-  실제 보호는 위의 규칙이 담당합니다.
-- **카카오톡/네이버 인앱 브라우저**에서는 Google OAuth가 차단됩니다. 로그인 화면에서
-  외부 브라우저 안내가 자동 표시됩니다.
+  실제 보호는 위 규칙과 초대 제어가 담당합니다.
+- **카카오톡/네이버 인앱 브라우저**에서는 Google OAuth가 차단됩니다. 로그인 화면에서 외부 브라우저
+  안내가 자동 표시됩니다.
