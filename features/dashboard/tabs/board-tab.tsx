@@ -11,7 +11,15 @@ import type { Patch } from "@/features/dashboard/types";
 import { PostSection } from "@/features/dashboard/components/post-section";
 import { FileList } from "@/features/dashboard/components/file-list";
 
-export function BoardTab({ data, persist }: { data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+export function BoardTab({
+  data,
+  persist,
+  canEdit,
+}: {
+  data: DashboardData;
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const [files, setFiles] = useState<File[]>([]);
 
   return (
@@ -19,6 +27,7 @@ export function BoardTab({ data, persist }: { data: DashboardData; persist: (pat
       title="자유게시판"
       empty="등록된 게시물이 없습니다."
       posts={data.boardPosts}
+      canEdit={canEdit}
       onCreate={async (post) => {
         const postId = post.id;
         const uploaded: UploadedFile[] = [];
@@ -58,6 +67,7 @@ export function BoardTab({ data, persist }: { data: DashboardData; persist: (pat
           compact
           empty=""
           files={(post as BoardPost).files || []}
+          canEdit={canEdit}
           onDelete={async (file) => {
             try { await deleteFirebaseFile(file.url); } catch {}
             await persist((current) => ({

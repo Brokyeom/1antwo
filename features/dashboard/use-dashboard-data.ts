@@ -22,11 +22,6 @@ const normalize = (data: Partial<DashboardData> | null): DashboardData => ({
   quarterlyData: data?.quarterlyData || {},
 });
 
-const PERMISSION_DENIED_MESSAGE =
-  "로그인 계정이 멤버 목록에 없습니다. 관리자에게 이메일 등록을 요청해주세요.";
-
-const isPermissionDenied = (error: Error) => /permission[_ ]denied/i.test(error.message);
-
 export function useDashboardData() {
   const [data, setDataState] = useState<DashboardData>(DEFAULT_DATA);
   const [loading, setLoading] = useState(isFirebaseDatabaseConfigured);
@@ -34,7 +29,6 @@ export function useDashboardData() {
   const [loadError, setLoadError] = useState(
     isFirebaseDatabaseConfigured ? "" : "Firebase Realtime Database 환경 변수가 설정되지 않았습니다.",
   );
-  const [accessDenied, setAccessDenied] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveStatus, setSaveStatus] = useState("");
   const dataRef = useRef<DashboardData>(DEFAULT_DATA);
@@ -61,17 +55,11 @@ export function useDashboardData() {
         setDataState(normalized);
         setLoading(false);
         setLoadError("");
-        setAccessDenied(false);
       },
       (firebaseError) => {
         initialLoadSettledRef.current = true;
         setLoading(false);
-        if (isPermissionDenied(firebaseError)) {
-          setAccessDenied(true);
-          setLoadError(PERMISSION_DENIED_MESSAGE);
-        } else {
-          setLoadError(`Firebase 데이터를 불러오지 못했습니다: ${firebaseError.message}`);
-        }
+        setLoadError(`Firebase 데이터를 불러오지 못했습니다: ${firebaseError.message}`);
       },
     );
     return () => {
@@ -144,7 +132,7 @@ export function useDashboardData() {
   }, []);
 
   return useMemo(
-    () => ({ data, loading, connected, loadError, accessDenied, saveError, saveStatus, persist, replaceFromBackup }),
-    [data, loading, connected, loadError, accessDenied, saveError, saveStatus, persist, replaceFromBackup],
+    () => ({ data, loading, connected, loadError, saveError, saveStatus, persist, replaceFromBackup }),
+    [data, loading, connected, loadError, saveError, saveStatus, persist, replaceFromBackup],
   );
 }

@@ -53,7 +53,15 @@ import { EmptyState, FormGrid, PageHeader, SectionCard } from "@/features/dashbo
 import { DeleteConfirm } from "@/features/dashboard/components/delete-confirm";
 import { StatCard } from "@/features/dashboard/components/stat-card";
 
-export function PortfolioTab({ data, persist }: { data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+export function PortfolioTab({
+  data,
+  persist,
+  canEdit,
+}: {
+  data: DashboardData;
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const toast = useToast();
   const mounted = useMounted();
   const [activePortfolioSection, setActivePortfolioSection] = useState<"charts" | "journal">("charts");
@@ -230,7 +238,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
       <PageHeader
         title="포트폴리오"
         description="보유 종목, 월별 수익률, 섹터 배분을 한 화면에서 관리합니다."
-        actions={
+        actions={canEdit ? (
           <>
             <Button variant="outline" size="sm" onClick={refreshNaverPrices} disabled={refreshing} className="text-muted-foreground">
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
@@ -241,7 +249,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
               종목 추가
             </Button>
           </>
-        }
+        ) : undefined}
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -303,16 +311,16 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
                         <TableCell className={`hidden md:table-cell ${tone.text}`}>{profit > 0 ? "+" : ""}₩{fmt(profit)}</TableCell>
                         <TableCell className="hidden text-muted-foreground md:table-cell">{weight}%</TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          {canEdit && <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={() => setEditingId(editingId === stock.id ? null : stock.id)}>수정</Button>
                             <DeleteConfirm
                               title="종목 삭제"
                               onConfirm={() => persist((current) => ({ ...current, portfolio: current.portfolio.filter((item) => item.id !== stock.id) }))}
                             />
-                          </div>
+                          </div>}
                         </TableCell>
                       </TableRow>
-                      {editingId === stock.id && (
+                      {canEdit && editingId === stock.id && (
                         <TableRow key={`${stock.id}-edit`} className="bg-card">
                           <TableCell colSpan={10}>
                             <form
@@ -352,6 +360,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
                   evalAmt={evalAmt}
                   profit={profit}
                   weight={weight}
+                  canEdit={canEdit}
                   editing={editingId === stock.id}
                   onEdit={() => setEditingId(editingId === stock.id ? null : stock.id)}
                   onCancel={() => setEditingId(null)}
@@ -389,12 +398,12 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
         <SectionCard
           title="포트폴리오 월별 수익률 추이"
           description="26.03~"
-          action={
+          action={canEdit ? (
             <Button variant="outline" size="sm" onClick={() => setShowReturn(true)}>
               <Plus className="h-3.5 w-3.5" />
               월별 수익률
             </Button>
-          }
+          ) : undefined}
         >
             <div className="h-64">
               {mounted && (
@@ -485,12 +494,12 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
         <SectionCard
           title="매매일지"
           description={`${data.tradeJournal.length}개 기록`}
-          action={
+          action={canEdit ? (
             <Button size="sm" onClick={() => openJournalForm()}>
               <Plus className="h-3.5 w-3.5" />
               매매일지 추가
             </Button>
-          }
+          ) : undefined}
         >
           <div className="hidden overflow-x-auto md:block">
             {sortedJournalEntries.length ? (
@@ -523,7 +532,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
                         <TableCell className="max-w-64 whitespace-normal break-words text-sm text-muted-foreground">{entry.buyReason}</TableCell>
                         <TableCell className="max-w-64 whitespace-normal break-words text-sm text-muted-foreground">{entry.sellReason}</TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          {canEdit && <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={() => openJournalForm(entry)}>
                               <Edit3 className="h-3.5 w-3.5" />
                               수정
@@ -532,7 +541,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
                               title="매매일지 삭제"
                               onConfirm={() => persist((current) => ({ ...current, tradeJournal: current.tradeJournal.filter((item) => item.id !== entry.id) }))}
                             />
-                          </div>
+                          </div>}
                         </TableCell>
                       </TableRow>
                     );
@@ -548,6 +557,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
               <TradeJournalMobileCard
                 key={entry.id}
                 entry={entry}
+                canEdit={canEdit}
                 onEdit={() => openJournalForm(entry)}
                 onDelete={() => persist((current) => ({ ...current, tradeJournal: current.tradeJournal.filter((item) => item.id !== entry.id) }))}
               />
@@ -556,7 +566,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
         </SectionCard>
       )}
 
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      {canEdit && <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>종목 추가</DialogTitle>
@@ -577,9 +587,9 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
 
-      <Dialog open={showReturn} onOpenChange={setShowReturn}>
+      {canEdit && <Dialog open={showReturn} onOpenChange={setShowReturn}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>월별 수익률 추가</DialogTitle>
@@ -621,9 +631,9 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
 
-      <Dialog
+      {canEdit && <Dialog
         open={showJournalForm}
         onOpenChange={(open) => {
           setShowJournalForm(open);
@@ -662,7 +672,7 @@ export function PortfolioTab({ data, persist }: { data: DashboardData; persist: 
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
     </div>
   );
 }
@@ -673,6 +683,7 @@ function StockMobileCard({
   evalAmt,
   profit,
   weight,
+  canEdit,
   editing,
   onEdit,
   onCancel,
@@ -684,6 +695,7 @@ function StockMobileCard({
   evalAmt: number;
   profit: number;
   weight: string;
+  canEdit: boolean;
   editing: boolean;
   onEdit: () => void;
   onCancel: () => void;
@@ -737,7 +749,7 @@ function StockMobileCard({
         </div>
       </div>
 
-      {editing && (
+      {canEdit && editing && (
         <form
           className="mt-4 grid gap-2 rounded-lg border bg-card p-3"
           onSubmit={(event) => {
@@ -758,23 +770,25 @@ function StockMobileCard({
         </form>
       )}
 
-      <div className="mt-4 flex justify-end gap-2">
+      {canEdit && <div className="mt-4 flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onEdit}>
           <Edit3 className="h-3.5 w-3.5" />
           수정
         </Button>
         <DeleteConfirm title="종목 삭제" onConfirm={onDelete} />
-      </div>
+      </div>}
     </div>
   );
 }
 
 function TradeJournalMobileCard({
   entry,
+  canEdit,
   onEdit,
   onDelete,
 }: {
   entry: TradeJournalEntry;
+  canEdit: boolean;
   onEdit: () => void;
   onDelete: () => void | Promise<void>;
 }) {
@@ -817,13 +831,13 @@ function TradeJournalMobileCard({
         </div>
       </div>
 
-      <div className="mt-4 flex justify-end gap-2">
+      {canEdit && <div className="mt-4 flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onEdit}>
           <Edit3 className="h-3.5 w-3.5" />
           수정
         </Button>
         <DeleteConfirm title="매매일지 삭제" onConfirm={onDelete} />
-      </div>
+      </div>}
     </div>
   );
 }

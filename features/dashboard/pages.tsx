@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { useAccessContext } from "@/features/auth/access-context";
 import { useDashboard } from "@/features/dashboard/context";
 import { PortfolioTab } from "@/features/dashboard/tabs/portfolio-tab";
 import { PresentationsTab } from "@/features/dashboard/tabs/presentations-tab";
@@ -12,31 +13,37 @@ import { AnalysisTab, CompanyPanel } from "@/features/dashboard/tabs/analysis-ta
 
 export function PortfolioPage() {
   const { data, persist } = useDashboard();
-  return <PortfolioTab data={data} persist={persist} />;
+  const { canEdit } = useAccessContext();
+  return <PortfolioTab data={data} persist={persist} canEdit={canEdit} />;
 }
 
 export function PresentationsPage() {
   const { data, persist } = useDashboard();
-  return <PresentationsTab data={data} persist={persist} />;
+  const { canEdit } = useAccessContext();
+  return <PresentationsTab data={data} persist={persist} canEdit={canEdit} />;
 }
 
 export function NoticePage() {
   const { data, persist } = useDashboard();
-  return <NoticeTab data={data} persist={persist} />;
+  const { canEdit } = useAccessContext();
+  return <NoticeTab data={data} persist={persist} canEdit={canEdit} />;
 }
 
 export function BoardPage() {
   const { data, persist } = useDashboard();
-  return <BoardTab data={data} persist={persist} />;
+  const { canEdit } = useAccessContext();
+  return <BoardTab data={data} persist={persist} canEdit={canEdit} />;
 }
 
 export function AnalysisPage() {
   const { data, persist } = useDashboard();
-  return <AnalysisTab data={data} persist={persist} />;
+  const { canEdit } = useAccessContext();
+  return <AnalysisTab data={data} persist={persist} canEdit={canEdit} />;
 }
 
 export function AnalysisCompanyPage({ company }: { company: string }) {
   const { data, persist } = useDashboard();
+  const { canEdit } = useAccessContext();
   const name = decodeURIComponent(company);
 
   if (!data.financials[name]) {
@@ -53,5 +60,5 @@ export function AnalysisCompanyPage({ company }: { company: string }) {
     );
   }
 
-  return <CompanyPanel name={name} data={data} persist={persist} />;
+  return <CompanyPanel name={name} data={data} persist={persist} canEdit={canEdit} />;
 }

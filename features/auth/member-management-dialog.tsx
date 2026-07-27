@@ -53,7 +53,7 @@ export function MemberManagementDialog({ inviterEmail }: { inviterEmail: string 
           <DialogHeader>
             <DialogTitle>멤버 관리</DialogTitle>
             <DialogDescription>
-              초대한 이메일로 Google 로그인한 사용자만 대시보드에 접근할 수 있습니다. (관리자는 콘솔에서 별도 관리)
+              초대한 이메일로 Google 로그인한 사용자만 대시보드를 수정할 수 있습니다. (관리자는 콘솔에서 별도 관리)
             </DialogDescription>
           </DialogHeader>
 
@@ -92,7 +92,7 @@ export function MemberManagementDialog({ inviterEmail }: { inviterEmail: string 
                     </div>
                     <DeleteConfirm
                       title="멤버 제외"
-                      description={`"${member.email}" 님의 접근 권한을 제거합니다.`}
+                      description={`"${member.email}" 님의 수정 권한을 제거합니다. 공개 열람은 계속 가능합니다.`}
                       triggerLabel="제외"
                       onConfirm={() => drop(member.key, member.email)}
                     />

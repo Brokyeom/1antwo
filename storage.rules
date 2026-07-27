@@ -3,13 +3,13 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Storage 규칙은 Realtime Database(/members, /admins)를 참조할 수 없다.
     // (Firestore 또는 custom claims만 가능하며 custom claims는 서버 인프라 필요)
-    // 따라서 동적 멤버 허용목록을 여기서 직접 적용할 수 없어, 검증된 로그인 사용자면 허용한다.
-    // 실질적인 접근 통제는 RTDB(dashboard)에 있다 — 초대되지 않은 사용자는 대시보드를 열 수
-    // 없어 파일 경로/URL 자체를 얻지 못하므로 업로드·다운로드 진입점이 없다.
+    // 따라서 동적 멤버 허용목록을 여기서 직접 적용할 수 없어, 파일 읽기는 공개하고
+    // 파일 쓰기는 검증된 로그인 사용자에게 허용한다. 앱은 초대된 멤버에게만 쓰기 UI를 노출한다.
     // 완전한 Storage 잠금이 필요하면 Cloud Functions로 member/admin custom claim을 부여하고
     // 아래 조건에 request.auth.token.member == true 를 추가하면 된다. (docs/SECURITY-SETUP.md 참고)
     match /{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.token.email_verified == true;
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email_verified == true;
     }
   }
 }

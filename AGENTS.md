@@ -11,7 +11,7 @@ This repository is a Next.js App Router dashboard migrated from the legacy stati
 - `lib/`: shared utilities, Firebase client setup, and default dashboard data.
 - `types/`: shared TypeScript domain types.
 
-No dedicated test directory exists yet. Add tests near the relevant feature or under `__tests__/` when a test framework is introduced.
+Vitest tests live next to the pure modules they cover (`*.test.ts`).
 
 ## Build, Test, and Development Commands
 
@@ -21,8 +21,7 @@ Use `pnpm` for all package operations.
 - `pnpm build`: create a production build and run TypeScript checks.
 - `pnpm start`: serve the production build after `pnpm build`.
 - `pnpm lint`: run ESLint across the repository.
-
-There is currently no `pnpm test` script.
+- `pnpm test`: run the Vitest unit test suite.
 
 ## Coding Style & Naming Conventions
 
@@ -42,10 +41,9 @@ Access `NEXT_PUBLIC_*` variables with static property reads such as `process.env
 
 ## Testing Guidelines
 
-Until a test framework is added, validate changes with:
-
 ```bash
 pnpm lint
+pnpm test
 pnpm build
 ```
 
@@ -56,6 +54,8 @@ For data or Firebase behavior, manually verify that existing `dashboard` payload
 ## Commit & Pull Request Guidelines
 
 Recent history uses generic upload-style commits, so no strict convention is established. Prefer concise imperative messages, for example `Add dashboard storage helper` or `Fix Tailwind config`.
+
+Work directly on the `main` branch. Do not create or switch to feature branches unless the user explicitly overrides this repository rule.
 
 Pull requests should include a short summary, verification commands run, screenshots for UI changes, and notes for Firebase or API behavior changes. Link related issues when available.
 

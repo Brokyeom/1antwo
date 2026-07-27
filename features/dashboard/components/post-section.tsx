@@ -30,6 +30,7 @@ export function PostSection({
   extraForm,
   renderPostExtra,
   requireContent,
+  canEdit,
 }: {
   title: string;
   empty: string;
@@ -39,6 +40,7 @@ export function PostSection({
   extraForm?: React.ReactNode;
   renderPostExtra?: (post: TextPost) => React.ReactNode;
   requireContent?: boolean;
+  canEdit: boolean;
 }) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -63,12 +65,12 @@ export function PostSection({
     <SectionCard
       title={title}
       description={`${posts.length}건`}
-      action={
+      action={canEdit ? (
         <Button size="sm" onClick={() => setOpen(true)}>
           <Plus className="h-3.5 w-3.5" />
           글쓰기
         </Button>
-      }
+      ) : undefined}
     >
         {posts.length === 0 ? (
           <EmptyState>{empty}</EmptyState>
@@ -91,7 +93,7 @@ export function PostSection({
                       <Button variant="outline" size="sm" onClick={() => setExpanded((current) => ({ ...current, [post.id]: !isOpen }))}>
                         {isOpen ? "접기" : "더보기"}
                       </Button>
-                      <DeleteConfirm title="글 삭제" onConfirm={() => onDelete(post.id)} />
+                      {canEdit && <DeleteConfirm title="글 삭제" onConfirm={() => onDelete(post.id)} />}
                     </div>
                   </div>
                   {isOpen && (
@@ -106,7 +108,7 @@ export function PostSection({
           </div>
         )}
     </SectionCard>
-    <Dialog open={open} onOpenChange={setOpen}>
+    {canEdit && <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title} 글쓰기</DialogTitle>
@@ -125,7 +127,7 @@ export function PostSection({
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
+    </Dialog>}
     </>
   );
 }

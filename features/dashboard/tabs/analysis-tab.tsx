@@ -50,7 +50,15 @@ import { EmptyState, FormGrid, PageHeader, SectionCard } from "@/features/dashbo
 import { DeleteConfirm } from "@/features/dashboard/components/delete-confirm";
 import { FileList } from "@/features/dashboard/components/file-list";
 
-export function AnalysisTab({ data, persist }: { data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+export function AnalysisTab({
+  data,
+  persist,
+  canEdit,
+}: {
+  data: DashboardData;
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const names = Object.keys(data.financials);
   const toast = useToast();
   const [query, setQuery] = useState("");
@@ -79,10 +87,10 @@ export function AnalysisTab({ data, persist }: { data: DashboardData; persist: (
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="기업명 검색..." className="pl-9" />
             </div>
-            <Button size="sm" onClick={() => setShowAdd(true)}>
+            {canEdit && <Button size="sm" onClick={() => setShowAdd(true)}>
               <Plus className="h-3.5 w-3.5" />
               기업 추가
-            </Button>
+            </Button>}
           </div>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
             {filtered.map((name) => {
@@ -109,7 +117,7 @@ export function AnalysisTab({ data, persist }: { data: DashboardData; persist: (
             })}
           </div>
       </SectionCard>
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      {canEdit && <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>기업 추가</DialogTitle>
@@ -123,12 +131,22 @@ export function AnalysisTab({ data, persist }: { data: DashboardData; persist: (
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
     </div>
   );
 }
 
-export function CompanyPanel({ name, data, persist }: { name: string; data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+export function CompanyPanel({
+  name,
+  data,
+  persist,
+  canEdit,
+}: {
+  name: string;
+  data: DashboardData;
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const docs = data.companyDocs[name] || [];
   const notes = data.companyNotes[name] || [];
   const reports = data.reports[name] || [];
@@ -143,7 +161,7 @@ export function CompanyPanel({ name, data, persist }: { name: string; data: Dash
             <h2 className="text-xl font-bold">{name}</h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">{data.financials[name]?.desc}</p>
           </div>
-          <DeleteConfirm
+          {canEdit && <DeleteConfirm
             title="기업 삭제"
             description={`"${name}" 기업과 연결된 화면 데이터를 삭제합니다.`}
             onConfirm={() =>
@@ -153,18 +171,30 @@ export function CompanyPanel({ name, data, persist }: { name: string; data: Dash
                 return { ...current, financials };
               })
             }
-          />
+          />}
         </div>
       </Card>
-      <CompanyDocs name={name} docs={docs} notes={notes} persist={persist} />
-      <CompanyReports name={name} reports={reports} data={data} persist={persist} />
-      <PerformancePanel title="최근 5개년 실적" labelKey="year" records={annual} onAdd={(record) => persist((current) => upsertPerformance(current, "annualData", name, record, 5, "year"))} onDelete={(id) => persist((current) => removePerformance(current, "annualData", name, id))} />
-      <PerformancePanel title="최근 8개 분기 실적" labelKey="quarter" records={quarterly} onAdd={(record) => persist((current) => upsertPerformance(current, "quarterlyData", name, record, 8, "quarter"))} onDelete={(id) => persist((current) => removePerformance(current, "quarterlyData", name, id))} />
+      <CompanyDocs name={name} docs={docs} notes={notes} persist={persist} canEdit={canEdit} />
+      <CompanyReports name={name} reports={reports} data={data} persist={persist} canEdit={canEdit} />
+      <PerformancePanel title="최근 5개년 실적" labelKey="year" records={annual} canEdit={canEdit} onAdd={(record) => persist((current) => upsertPerformance(current, "annualData", name, record, 5, "year"))} onDelete={(id) => persist((current) => removePerformance(current, "annualData", name, id))} />
+      <PerformancePanel title="최근 8개 분기 실적" labelKey="quarter" records={quarterly} canEdit={canEdit} onAdd={(record) => persist((current) => upsertPerformance(current, "quarterlyData", name, record, 8, "quarter"))} onDelete={(id) => persist((current) => removePerformance(current, "quarterlyData", name, id))} />
     </div>
   );
 }
 
-function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: UploadedFile[]; notes: TextPost[]; persist: (patch: Patch) => Promise<void> }) {
+function CompanyDocs({
+  name,
+  docs,
+  notes,
+  persist,
+  canEdit,
+}: {
+  name: string;
+  docs: UploadedFile[];
+  notes: TextPost[];
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const upload = async (file?: File) => {
@@ -199,7 +229,7 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
     <SectionCard
       title="기업분석 자료"
       description={`글 ${notes.length} · 파일 ${docs.length}`}
-      action={
+      action={canEdit ? (
         <>
           <Button variant="outline" size="sm" onClick={() => setOpen(true)}><Plus className="h-3.5 w-3.5" />글쓰기</Button>
           <label>
@@ -207,11 +237,12 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
             <input className="hidden" type="file" accept=".pdf,.md,.docx,.doc" onChange={(event) => upload(event.target.files?.[0])} />
           </label>
         </>
-      }
+      ) : undefined}
     >
         <FileList
           files={docs}
           empty="업로드된 파일이 없습니다."
+          canEdit={canEdit}
           onDelete={async (file) => {
             try { await deleteFirebaseFile(file.url); } catch {}
             await persist((current) => ({ ...current, companyDocs: { ...current.companyDocs, [name]: (current.companyDocs[name] || []).filter((item) => item.id !== file.id) } }));
@@ -225,14 +256,14 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
                   <h3 className="font-semibold">{note.title}</h3>
                   <div className="mt-1 text-xs text-muted-foreground">작성자 {note.author} · {new Date(note.createdAt).toLocaleString("ko-KR")}</div>
                 </div>
-                <DeleteConfirm title="글 삭제" onConfirm={() => persist((current) => ({ ...current, companyNotes: { ...current.companyNotes, [name]: (current.companyNotes[name] || []).filter((item) => item.id !== note.id) } }))} />
+                {canEdit && <DeleteConfirm title="글 삭제" onConfirm={() => persist((current) => ({ ...current, companyNotes: { ...current.companyNotes, [name]: (current.companyNotes[name] || []).filter((item) => item.id !== note.id) } }))} />}
               </div>
               <p className="mt-3 whitespace-pre-wrap rounded-lg border bg-background p-3 text-sm leading-7 text-foreground">{note.content}</p>
             </article>
           )) : <div className="py-6 text-center text-sm text-muted-foreground">작성된 글이 없습니다.</div>}
         </div>
     </SectionCard>
-    <Dialog open={open} onOpenChange={setOpen}>
+    {canEdit && <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>기업 노트 작성</DialogTitle>
@@ -250,12 +281,24 @@ function CompanyDocs({ name, docs, notes, persist }: { name: string; docs: Uploa
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
+    </Dialog>}
     </>
   );
 }
 
-function CompanyReports({ name, reports, data, persist }: { name: string; reports: UploadedFile[]; data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+function CompanyReports({
+  name,
+  reports,
+  data,
+  persist,
+  canEdit,
+}: {
+  name: string;
+  reports: UploadedFile[];
+  data: DashboardData;
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const toast = useToast();
   const upload = async (file?: File) => {
     if (!file) return;
@@ -273,29 +316,42 @@ function CompanyReports({ name, reports, data, persist }: { name: string; report
     <SectionCard
       title="애널리스트 리포트"
       description={`${reports.length}건`}
-      action={
+      action={canEdit ? (
         <label>
           <Button asChild size="sm"><span><Upload className="h-3.5 w-3.5" />리포트 업로드</span></Button>
           <input className="hidden" type="file" accept=".pdf" onChange={(event) => upload(event.target.files?.[0])} />
         </label>
-      }
+      ) : undefined}
     >
         <FileList
           files={reports}
           empty="업로드된 리포트가 없습니다."
+          canEdit={canEdit}
           onDelete={async (file) => {
             try { await deleteFirebaseFile(file.url); } catch {}
             await persist((current) => ({ ...current, reports: { ...current.reports, [name]: (current.reports[name] || []).filter((item) => item.id !== file.id) } }));
           }}
         />
         {reports.map((report) => (
-          <ReportComments key={report.id} report={report} company={name} comments={data.reportComments[report.id] || []} persist={persist} />
+          <ReportComments key={report.id} report={report} company={name} comments={data.reportComments[report.id] || []} persist={persist} canEdit={canEdit} />
         ))}
     </SectionCard>
   );
 }
 
-function ReportComments({ report, company, comments, persist }: { report: UploadedFile; company: string; comments: DashboardData["reportComments"][string]; persist: (patch: Patch) => Promise<void> }) {
+function ReportComments({
+  report,
+  company,
+  comments,
+  persist,
+  canEdit,
+}: {
+  report: UploadedFile;
+  company: string;
+  comments: DashboardData["reportComments"][string];
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -319,15 +375,15 @@ function ReportComments({ report, company, comments, persist }: { report: Upload
                   <p className="whitespace-pre-wrap text-sm text-foreground">{comment.content}</p>
                   <div className="mt-1 text-xs text-muted-foreground">작성자 {comment.author} · {new Date(comment.createdAt).toLocaleString("ko-KR")} · {company}</div>
                 </div>
-                <DeleteConfirm title="코멘트 삭제" onConfirm={() => persist((current) => ({ ...current, reportComments: { ...current.reportComments, [report.id]: (current.reportComments[report.id] || []).filter((item) => item.id !== comment.id) } }))} />
+                {canEdit && <DeleteConfirm title="코멘트 삭제" onConfirm={() => persist((current) => ({ ...current, reportComments: { ...current.reportComments, [report.id]: (current.reportComments[report.id] || []).filter((item) => item.id !== comment.id) } }))} />}
               </div>
             ))}
           </div>
-          <form onSubmit={submit} className="mt-3 space-y-2">
+          {canEdit && <form onSubmit={submit} className="mt-3 space-y-2">
             <Input name="author" placeholder="작성자 *" className="w-36" />
             <Textarea name="content" placeholder="코멘트를 입력하세요..." className="min-h-20" />
             <Button size="sm">등록</Button>
-          </form>
+          </form>}
         </div>
       )}
     </div>
@@ -340,12 +396,14 @@ function PerformancePanel({
   records,
   onAdd,
   onDelete,
+  canEdit,
 }: {
   title: string;
   labelKey: "year" | "quarter";
   records: PerformanceRecord[];
   onAdd: (record: PerformanceRecord) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  canEdit: boolean;
 }) {
   const toast = useToast();
   const mounted = useMounted();
@@ -376,7 +434,7 @@ function PerformancePanel({
     <SectionCard
       title={title}
       description="단위: 억원"
-      action={<Button size="sm" onClick={() => setOpen(true)}><Plus className="h-3.5 w-3.5" />실적 추가</Button>}
+      action={canEdit ? <Button size="sm" onClick={() => setOpen(true)}><Plus className="h-3.5 w-3.5" />실적 추가</Button> : undefined}
     >
         {records.length ? (
           <>
@@ -421,7 +479,7 @@ function PerformancePanel({
                         <TableCell className={operatingTone.text}>{fmt(record.opProfit)}</TableCell>
                         <TableCell className={netTone.text}>{fmt(record.netProfit)}</TableCell>
                         <TableCell className={operatingTone.strongText}>{record.revenue > 0 ? ((record.opProfit / record.revenue) * 100).toFixed(1) : "-"}%</TableCell>
-                        <TableCell><DeleteConfirm title="실적 데이터 삭제" onConfirm={() => onDelete(record.id)} /></TableCell>
+                        <TableCell>{canEdit && <DeleteConfirm title="실적 데이터 삭제" onConfirm={() => onDelete(record.id)} />}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -430,7 +488,7 @@ function PerformancePanel({
             </div>
             <div className="space-y-3 md:hidden">
               {records.map((record) => (
-                <PerformanceMobileCard key={record.id} record={record} labelKey={labelKey} onDelete={() => onDelete(record.id)} />
+                <PerformanceMobileCard key={record.id} record={record} labelKey={labelKey} canEdit={canEdit} onDelete={() => onDelete(record.id)} />
               ))}
             </div>
           </>
@@ -438,7 +496,7 @@ function PerformancePanel({
           <EmptyState>입력된 실적 데이터가 없습니다.</EmptyState>
         )}
     </SectionCard>
-    <Dialog open={open} onOpenChange={setOpen}>
+    {canEdit && <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title} 입력</DialogTitle>
@@ -457,7 +515,7 @@ function PerformancePanel({
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
+    </Dialog>}
     </>
   );
 }
@@ -466,10 +524,12 @@ function PerformanceMobileCard({
   record,
   labelKey,
   onDelete,
+  canEdit,
 }: {
   record: PerformanceRecord;
   labelKey: "year" | "quarter";
   onDelete: () => void | Promise<void>;
+  canEdit: boolean;
 }) {
   const operatingTone = getReturnTone(record.opProfit);
   const netTone = getReturnTone(record.netProfit);
@@ -479,7 +539,7 @@ function PerformanceMobileCard({
     <div className="rounded-lg border bg-background p-4">
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-semibold">{record[labelKey]}</h3>
-        <DeleteConfirm title="실적 데이터 삭제" onConfirm={onDelete} />
+        {canEdit && <DeleteConfirm title="실적 데이터 삭제" onConfirm={onDelete} />}
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div>

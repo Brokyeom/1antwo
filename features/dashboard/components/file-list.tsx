@@ -11,11 +11,13 @@ export function FileList({
   empty,
   onDelete,
   compact,
+  canEdit,
 }: {
   files: UploadedFile[];
   empty: string;
   onDelete: (file: UploadedFile) => Promise<void>;
   compact?: boolean;
+  canEdit: boolean;
 }) {
   if (!files.length) return empty ? <EmptyState>{empty}</EmptyState> : null;
   return (
@@ -36,7 +38,7 @@ export function FileList({
                 보기
               </a>
             </Button>
-            <DeleteConfirm title="파일 삭제" onConfirm={() => onDelete(file)} />
+            {canEdit && <DeleteConfirm title="파일 삭제" onConfirm={() => onDelete(file)} />}
           </div>
         </div>
       ))}

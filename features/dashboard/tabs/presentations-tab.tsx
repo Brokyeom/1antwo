@@ -11,7 +11,15 @@ import type { Patch } from "@/features/dashboard/types";
 import { SectionCard } from "@/features/dashboard/components/layout";
 import { FileList } from "@/features/dashboard/components/file-list";
 
-export function PresentationsTab({ data, persist }: { data: DashboardData; persist: (patch: Patch) => Promise<void> }) {
+export function PresentationsTab({
+  data,
+  persist,
+  canEdit,
+}: {
+  data: DashboardData;
+  persist: (patch: Patch) => Promise<void>;
+  canEdit: boolean;
+}) {
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
 
@@ -39,18 +47,19 @@ export function PresentationsTab({ data, persist }: { data: DashboardData; persi
     <SectionCard
       title="발표자료"
       description={`${data.presentations.length}건`}
-      action={
+      action={canEdit ? (
         <label>
           <Button asChild size="sm">
             <span><Upload className="h-3.5 w-3.5" />{uploading ? "업로드 중..." : "파일 업로드"}</span>
           </Button>
           <input className="hidden" type="file" accept=".pdf,.pptx,.ppt" onChange={(event) => upload(event.target.files?.[0])} />
         </label>
-      }
+      ) : undefined}
     >
         <FileList
           empty="업로드된 발표자료가 없습니다."
           files={[...data.presentations].reverse()}
+          canEdit={canEdit}
           onDelete={async (file) => {
             try { await deleteFirebaseFile(file.url); } catch {}
             await persist((current) => ({ ...current, presentations: current.presentations.filter((item) => item.id !== file.id) }));
