@@ -20,11 +20,15 @@ export type AuthState = {
 
 export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(Boolean(auth));
+  // 서버와 브라우저의 최초 렌더가 항상 같도록 Firebase 상태는 effect에서 확인한다.
+  const [loading, setLoading] = useState(true);
   const [signInError, setSignInError] = useState("");
 
   useEffect(() => {
-    if (!auth) return;
+    if (!auth) {
+      const timeout = window.setTimeout(() => setLoading(false), 0);
+      return () => window.clearTimeout(timeout);
+    }
     return onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       setLoading(false);

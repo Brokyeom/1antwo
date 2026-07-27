@@ -24,18 +24,24 @@ const normalize = (data: Partial<DashboardData> | null): DashboardData => ({
 
 export function useDashboardData() {
   const [data, setDataState] = useState<DashboardData>(DEFAULT_DATA);
-  const [loading, setLoading] = useState(isFirebaseDatabaseConfigured);
+  // 서버와 브라우저의 최초 렌더가 항상 같도록 Firebase 상태는 effect에서 확인한다.
+  const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
-  const [loadError, setLoadError] = useState(
-    isFirebaseDatabaseConfigured ? "" : "Firebase Realtime Database 환경 변수가 설정되지 않았습니다.",
-  );
+  const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [saveStatus, setSaveStatus] = useState("");
   const dataRef = useRef<DashboardData>(DEFAULT_DATA);
-  const initialLoadSettledRef = useRef(!isFirebaseDatabaseConfigured);
+  const initialLoadSettledRef = useRef(false);
 
   useEffect(() => {
-    if (!dashboardRef) return;
+    if (!dashboardRef) {
+      const timeout = window.setTimeout(() => {
+        initialLoadSettledRef.current = true;
+        setLoading(false);
+        setLoadError("Firebase Realtime Database 환경 변수가 설정되지 않았습니다.");
+      }, 0);
+      return () => window.clearTimeout(timeout);
+    }
     const activeDashboardRef = dashboardRef;
     const timeout = window.setTimeout(() => {
       if (!initialLoadSettledRef.current) {
